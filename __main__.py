@@ -1,6 +1,7 @@
 import math
 import sys
 import speech_recognition as sr
+import keyboard
 
 def calculate_firing_solution(gun_x, gun_y, target_x, target_y):
     """Calculates map distance, compass bearing, and azimuth MILs."""
@@ -93,6 +94,9 @@ def main():
     gun_y = None
     
     while True:
+        print("\n[STANDBY] Press 'F13' to start the next mission calculation...")
+        keyboard.wait('f13')  # Pauses execution entirely until F13 is pressed
+        
         print("\n=== NEW MISSION ===")
         gun_x = get_coordinate("Gun X coordinate", gun_x, use_voice)
         gun_y = get_coordinate("Gun Y coordinate", gun_y, use_voice)
