@@ -45,32 +45,31 @@ def listen_for_input(prompt_text):
             print(f"> Could not request results; {e}")
             return ""
 
-def get_coordinate(prompt_text, current_val=None, use_voice=True):
-    """Helper to ask for coordinates via voice or text, allowing defaults and exiting."""
+def get_coordinate(prompt_text, use_voice=True, allow_new=False):
+    """Helper to ask for coordinates via voice or text, handling 'new' keyword and exiting."""
+    if allow_new:
+        action_word = "say" if use_voice else "type"
+        full_prompt = f"{prompt_text} (or {action_word} 'new' to move gun)"
+    else:
+        full_prompt = prompt_text
+
     while True:
-        if current_val is not None:
-            action_word = "Say" if use_voice else "Type"
-            full_prompt = f"{prompt_text}. ({action_word} 'keep' or leave blank to use {current_val})"
-        else:
-            full_prompt = prompt_text
-            
         if use_voice:
             user_in = listen_for_input(full_prompt)
         else:
             user_in = input(f"{full_prompt}: ").strip().lower()
             
-        # Handle empty/silent input when there's a default
-        if user_in == "" and current_val is not None:
-            print(f"Keeping default: {current_val}")
-            return current_val
-            
-        # Handle explicit 'keep' command
-        if user_in in ['keep', 'skip', 'next', 'same'] and current_val is not None:
-            return current_val
-            
         if user_in in ['q', 'quit', 'exit', 'stop', 'abort']:
             print("Exiting calculator. Good hunting.")
             sys.exit()
+
+        if user_in == 'new':
+            if allow_new:
+                return 'new'
+            else:
+                input_type = "say" if use_voice else "type"
+                print(f"Error: 'new' command not valid here. Please {input_type} a coordinate.")
+                continue
             
         try:
             # Google STT generally formats spoken numbers ("forty two") as digits ("42")
@@ -98,15 +97,28 @@ def main():
         keyboard.wait('f13')  # Pauses execution entirely until F13 is pressed
         
         print("\n=== NEW MISSION ===")
-        gun_x = get_coordinate("Gun X coordinate", gun_x, use_voice)
-        gun_y = get_coordinate("Gun Y coordinate", gun_y, use_voice)
         
-        target_x = get_coordinate("Target X coordinate", None, use_voice)
-        target_y = get_coordinate("Target Y coordinate", None, use_voice)
+        # Only ask for Gun coords if they haven't been set yet (first run)
+        if gun_x is None or gun_y is None:
+            gun_x = get_coordinate("Gun X coordinate", use_voice)
+            gun_y = get_coordinate("Gun Y coordinate", use_voice)
+        
+        # Ask for Target X, allowing the 'new' keyword here
+        target_x = get_coordinate("Target X coordinate", use_voice, allow_new=True)
+        
+        # If the user says 'new', ask for the gun coordinates again, then ask for Target X
+        if target_x == 'new':
+            print("\n[UPDATING GUN POSITION]")
+            gun_x = get_coordinate("New Gun X coordinate", use_voice)
+            gun_y = get_coordinate("New Gun Y coordinate", use_voice)
+            target_x = get_coordinate("Target X coordinate", use_voice)
+            
+        target_y = get_coordinate("Target Y coordinate", use_voice)
         
         distance, bearing = calculate_firing_solution(gun_x, gun_y, target_x, target_y)
         
         print("\n=== FIRING SOLUTION ===")
+        print(f"Gun Pos:  ({gun_x}, {gun_y})")
         print(f"Range:    {distance:.1f} meters")
         print(f"Bearing:  {bearing:.1f}°")
 
