@@ -2,6 +2,7 @@ import math
 import sys
 import speech_recognition as sr
 import keyboard
+import time
 
 def calculate_firing_solution(gun_x, gun_y, target_x, target_y):
     """Calculates map distance, compass bearing, and azimuth MILs."""
@@ -121,6 +122,8 @@ def main():
         print(f"Gun Pos:  ({gun_x}, {gun_y})")
         print(f"Range:    {distance:.1f} meters")
         print(f"Bearing:  {bearing:.1f}°")
+
+        time.sleep(2)
 
 if __name__ == "__main__":
     main()
