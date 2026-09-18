@@ -44,16 +44,20 @@ def listen_for_input(prompt_text):
             print(f"> Could not request results; {e}")
             return ""
 
-def get_coordinate(prompt_text, current_val=None):
-    """Helper to ask for coordinates via voice, allowing defaults and exiting."""
+def get_coordinate(prompt_text, current_val=None, use_voice=True):
+    """Helper to ask for coordinates via voice or text, allowing defaults and exiting."""
     while True:
         if current_val is not None:
-            full_prompt = f"{prompt_text}. (Say 'keep' to use {current_val})"
+            action_word = "Say" if use_voice else "Type"
+            full_prompt = f"{prompt_text}. ({action_word} 'keep' or leave blank to use {current_val})"
         else:
             full_prompt = prompt_text
             
-        user_in = listen_for_input(full_prompt)
-        
+        if use_voice:
+            user_in = listen_for_input(full_prompt)
+        else:
+            user_in = input(f"{full_prompt}: ").strip().lower()
+            
         # Handle empty/silent input when there's a default
         if user_in == "" and current_val is not None:
             print(f"Keeping default: {current_val}")
@@ -73,22 +77,28 @@ def get_coordinate(prompt_text, current_val=None):
             clean_in = user_in.replace(',', '.').replace(' ', '')
             return float(clean_in)
         except ValueError:
-            print("Error: Please say a numerical coordinate.")
+            input_type = "say" if use_voice else "type"
+            print(f"Error: Please {input_type} a numerical coordinate.")
 
 def main():
-    print("--- WARDOGS Voice Artillery Calculator ---")
-    print("Say 'quit', 'stop', or 'abort' at any prompt to exit.\n")
+    print("--- WARDOGS Artillery Calculator ---")
+    
+    # Prompt for input mode at launch
+    mode_selection = input("Select input mode - (1) Type or (2) Voice: ").strip()
+    use_voice = (mode_selection == '2')
+    
+    print("\nSay 'quit', 'stop', or 'abort' at any prompt to exit." if use_voice else "\nType 'quit', 'stop', or 'abort' at any prompt to exit.")
     
     gun_x = None
     gun_y = None
     
     while True:
         print("\n=== NEW MISSION ===")
-        gun_x = get_coordinate("State Gun X coordinate", gun_x)
-        gun_y = get_coordinate("State Gun Y coordinate", gun_y)
+        gun_x = get_coordinate("Gun X coordinate", gun_x, use_voice)
+        gun_y = get_coordinate("Gun Y coordinate", gun_y, use_voice)
         
-        target_x = get_coordinate("State Target X coordinate")
-        target_y = get_coordinate("State Target Y coordinate")
+        target_x = get_coordinate("Target X coordinate", None, use_voice)
+        target_y = get_coordinate("Target Y coordinate", None, use_voice)
         
         distance, bearing = calculate_firing_solution(gun_x, gun_y, target_x, target_y)
         
